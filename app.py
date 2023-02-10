@@ -4,28 +4,37 @@ from flask_socketio import SocketIO, send, emit
 
 app = Flask(__name__)
 socket = SocketIO(app, cors_allowed_origins='*')
-squares = [-1 for i in range(9)]
+squares = [-1 for _ in range(9)]
 turn = 0
 gameOver=False
 
+def initialize_game():
+    global squares
+    global gameOver
+    global turn
+
+    squares = [-1 for _ in range(9)]
+    gameOver = False
+    turn = 0 
+    return {'squares':squares, 'turn':turn, 'gameOver':gameOver}
+
 def calculate_winner(squares):
-    if((squares[0] == squares[4] == squares[8] == 'X') or (squares[0] == squares[4] == squares[8] == 'O')):
-        return True
-    if((squares[1] == squares[4] == squares[7] == 'X') or (squares[1] == squares[4] == squares[7] == 'O')):
-        return True
-    if((squares[2] == squares[4] == squares[6] == 'X') or (squares[2] == squares[4] == squares[6] == 'O')):
-        return True
-    if((squares[3] == squares[4] == squares[5] == 'X') or (squares[3] == squares[4] == squares[5] == 'O')):
-        return True
-    if((squares[0] == squares[1] == squares[2] == 'X') or (squares[0] == squares[1] == squares[2] == 'O')):
-        return True
-    if((squares[0] == squares[3] == squares[6] == 'X') or (squares[0] == squares[3] == squares[6] == 'O')):
-        return True
-    if((squares[6] == squares[7] == squares[8] == 'X') or (squares[6] == squares[7] == squares[8] == 'O')):
-        return True
-    if((squares[2] == squares[5] == squares[8] == 'X') or (squares[2] == squares[5] == squares[8] == 'O')):
-        return True
-    return False
+    lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+  ];
+    for i in range(len(lines)):
+        a, b, c = lines[i]
+        print(a, b, c)
+        if ((squares[a] == squares[b] == squares[c]) and (squares[a] == 'X' or squares[a] == 'O')):
+            return (a,b,c)
+    return None
 
 @socket.on('connect')
 def test_connect():
@@ -37,6 +46,11 @@ def test_connect():
 def move(msg):
     print('recieved ping!');
     emit('pong', msg+' was recieved on server')
+
+@socket.on('restart')
+def restart():
+    return initialize_game()
+    
 
 @socket.on('move')
 def move(move):
@@ -52,14 +66,15 @@ def move(move):
         print(f'{pos} clicked')
         if squares[pos] == -1:
             squares[pos] = 'X' if turn == 0 else 'O'
-            if calculate_winner(squares):
-                emit('gameOver', {'squares':squares, 'gameOver':True}, broadcast=True)
+            winningSquares = calculate_winner(squares) 
+            if winningSquares is not None:
+                emit('gameOver', {'squares':squares, 'gameOver':True, 'winningSquares':winningSquares}, broadcast=True)
                 gameOver=True
             else:
                 emit('recieved', {'squares':squares, 'turn':1 if turn == 0 else 0}, broadcast=True)
         else:
             print('emitting error')
-            emit('error', {'message':'square already used'})
+            emit('error', {'message':f'square {pos} already used'})
         if turn == 1:
             turn = 0
         else: turn = 1
