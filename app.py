@@ -49,7 +49,8 @@ def move(msg):
 
 @socket.on('restart')
 def restart():
-    return initialize_game()
+    print('restarting game!!')
+    emit('restart', initialize_game(), broadcast=True)
     
 
 @socket.on('move')
