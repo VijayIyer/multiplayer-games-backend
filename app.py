@@ -1,84 +1,67 @@
-from flask import Flask, json
+from flask import Flask, json, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, send, emit
+from flask_ngrok import run_with_ngrok
+from tic_tac_toe import GameState, GameType, UserType ,TicTacToeGame, User
 
 app = Flask(__name__)
 socket = SocketIO(app, cors_allowed_origins='*')
-squares = [-1 for _ in range(9)]
-turn = 0
-gameOver=False
+CORS(app)
+run_with_ngrok(app)
 
-def initialize_game():
-    global squares
-    global gameOver
-    global turn
+@app.route('/')
+def test():
+    return 'Hello World!'
 
-    squares = [-1 for _ in range(9)]
-    gameOver = False
-    turn = 0 
-    return {'squares':squares, 'turn':turn, 'gameOver':gameOver}
+@socket.on('createTicTacToeGame')
+def create_new_game(user_info):
+    new_game = TicTacToeGame()
+    new_game.add_user({'id':request.sid, 'name':user_info['name']})
+    emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe'}, broadcast=True)
+    emit('newGameDetails', { 'id':new_game.id, 'squares':new_game.squares } , to=request.sid)
 
-def calculate_winner(squares):
-    lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
-  ];
-    for i in range(len(lines)):
-        a, b, c = lines[i]
-        print(a, b, c)
-        if ((squares[a] == squares[b] == squares[c]) and (squares[a] == 'X' or squares[a] == 'O')):
-            return (a,b,c)
-    return None
+@socket.on('getExistingTicTacToeGame')
+def get_ongoing_game(game_info):
+    print(f'\ntrying to fetch game {game_info["id"]}')
+    print([game for game in TicTacToeGame._games])
+    existing_game = list(filter(lambda game: game.id == int(game_info['id']), TicTacToeGame._games))[0]
+    emit('ongoingGameDetails', { 'id':existing_game.id, 'squares':existing_game.squares } , to=request.sid)
+
+@socket.on('chat')
+def chat(data):
+    print(f'recieved chat message:{data["msg"]}')
+    socket.emit('chat', {'msg':data['msg']}, broadcast=True)
+
+@socket.on('join')
+def join_game():
+    user_id = request.sid
+    print(user_id)
+    emit('joined',{'user_id':user_id})
 
 @socket.on('connect')
 def test_connect():
-    global squares
-    print(f'sending initial data {squares}');
-    emit('sending initial data', {'squares': squares})
-    
-@socket.on('ping')
-def move(msg):
-    print('recieved ping!');
-    emit('pong', msg+' was recieved on server')
+    #global squares
+    print(f'connection request recieved from {request.sid}');
+    send('connected!')
 
-@socket.on('restart')
-def restart():
-    print('restarting game!!')
-    emit('restart', initialize_game(), broadcast=True)
-    
+@socket.on('getAllOngoingGames')
+def get_all_ongoing_games():
+    print(f'getting all onging games: {TicTacToeGame._games}')
+    return list(map(lambda x: {'gameId':x.id, 'type':'Tic Tac Toe'}, TicTacToeGame._games))
 
 @socket.on('move')
 def move(move):
-    global gameOver
-    global squares
-    global turn
-    print(squares)
-    if gameOver:
-        emit('gameOver', {'squares':squares, 'gameOver':True}, broadcast=True)
-    else:
-        
-        pos = move['pos']
-        print(f'{pos} clicked')
-        if squares[pos] == -1:
-            squares[pos] = 'X' if turn == 0 else 'O'
-            winningSquares = calculate_winner(squares) 
-            if winningSquares is not None:
-                emit('gameOver', {'squares':squares, 'gameOver':True, 'winningSquares':winningSquares}, broadcast=True)
-                gameOver=True
-            else:
-                emit('recieved', {'squares':squares, 'turn':1 if turn == 0 else 0}, broadcast=True)
-        else:
-            print('emitting error')
-            emit('error', {'message':f'square {pos} already used'})
-        if turn == 1:
-            turn = 0
-        else: turn = 1
+    game = TicTacToeGame._games[move['gameId']]
+    if game.is_game_over():
+        print('game over!')
+        emit('gameOver', {'winningSquares':game.winner}, to=request.sid)
+        return {'squares':game.squares, 'turn':game.turn.value}
+    pos = move['pos']
+    game.move(pos)
+    if game.winner is not None:
+        emit('gameOver', {'winningSquares':game.winner}, broadcast=True)
+    emit('opponentMadeMove', {'squares':game.squares, 'turn':game.turn.value}, skip_sid=request.sid, broadcast=True)
+    return {'squares':game.squares, 'turn':game.turn.value}
 
 if __name__ == "__main__":
     socket.run(app)
