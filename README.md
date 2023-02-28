@@ -1,5 +1,9 @@
-# tic-tac-toe-backend
-Flask SocketIO application which controls a tic-tac-toe game so multiple users can make moves
+Flask SocketIO application which manages baord games (currently supports tictactoe and connect4) 
+- state of the game
+- validation of moves
+- sending move updates to each user
+
+Instructions to run it - 
 
 1. Create virtualenv file using virtualenv venv
 2. install required packages using `pip install -r requirements.txt`
