@@ -56,6 +56,7 @@ def get_ongoing_connect4_game(game_info):
         { 'id':existing_game.id,
          'filled':existing_game.filled, 
          'allowed':existing_game.allowed, 
+         'winningCircles':existing_game.winningCircles if existing_game.winningCircles is not None else None,
          'turn':existing_game.turn.value } , to=request.sid)
 
 @socket.on('chat')
@@ -99,22 +100,26 @@ def move(move):
 def make_connect4_move(move):
     
     game = Connect4._games[move['gameId']]
-    print(f'turn is ${game.turn}')
+    print(f'turn is {game.turn}')
     # game changes based on move
     pos = move['cellNumber']
     if(int(pos) in game.allowed and game.filled[int(pos)] == -1):
         game.move(pos)
         if game.is_game_over():
-            game.state = Connect4GameState.OVER
-            game.calculate_winner()
             emit('connect4gameover', 
-                {'winningCircles': game.winningCircles
+                {'winningCircles': game.winningCircles,
+                'filled': game.filled,
+                'allowed': game.allowed,
+                'turn': game.turn.value,
+                'id':game.id
                     }, broadcast=True)
         else:
             emit('connect4MoveSuccess', {
                 'filled':game.filled,
                 'allowed':game.allowed,
-                'turn':game.turn.value
+                'turn':game.turn.value,
+                'winningCircles':game.winningCircles,
+                'id':game.id
                 }, broadcast = True)
     else:
         print('emitting move not allowed message')
