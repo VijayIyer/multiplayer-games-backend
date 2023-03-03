@@ -1,4 +1,4 @@
-from flask import Flask, json, request
+from flask import Flask, json, request #, current_app as app
 from flask_cors import CORS
 from flask_socketio import SocketIO, send, emit
 from flask_ngrok import run_with_ngrok
@@ -18,15 +18,27 @@ def test():
 def create_new_game(user_info):
     new_game = TicTacToeGame()
     new_game.add_user({'id':request.sid, 'name':user_info['name']})
-    emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe'}, broadcast=True)
-    emit('newGameDetails', { 'id':new_game.id, 'squares':new_game.squares } , to=request.sid)
+    emit('newGameCreated', {'id': new_game.id, 'type':'Tic Tac Toe'}, broadcast=True)
+    emit('newGameDetails', 
+        { 
+        'id':new_game.id,
+        'turn':new_game.turn.value, 
+        'squares':new_game.squares, 
+        'winner':new_game.winner 
+        } , to=request.sid)
 
 @socket.on('getExistingTicTacToeGame')
 def get_ongoing_game(game_info):
     print(f'\ntrying to fetch game {game_info["id"]}')
     print([game for game in TicTacToeGame._games])
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), TicTacToeGame._games))[0]
-    emit('ongoingGameDetails', { 'id':existing_game.id, 'squares':existing_game.squares } , to=request.sid)
+    emit('ongoingGameDetails', 
+        { 
+        'id':existing_game.id, 
+        'squares':existing_game.squares, 
+        'turn':existing_game.turn.value, 
+        'winner':existing_game.winner
+        } , to=request.sid)
 
 @socket.on('createConnect4Game')
 def create_new_connect4_game(user_info):
@@ -73,13 +85,14 @@ def move(move):
     game = TicTacToeGame._games[move['gameId']]
     if game.is_game_over():
         print('game over!')
-        emit('gameOver', {'winningSquares':game.winner}, to=request.sid)
+        emit('gameOver', {'id':game.id, 'winningSquares':game.winner}, to=request.sid)
         return {'squares':game.squares, 'turn':game.turn.value}
     pos = move['pos']
     game.move(pos)
     if game.winner is not None:
-        emit('gameOver', {'winningSquares':game.winner}, broadcast=True)
-    emit('opponentMadeMove', {'squares':game.squares, 'turn':game.turn.value}, skip_sid=request.sid, broadcast=True)
+        emit('gameOver', {'id':game.id, 'winningSquares':game.winner, 'turn': game.turn.value}, broadcast=True)
+
+    emit('opponentMadeMove', {'id':game.id, 'squares':game.squares, 'turn':game.turn.value}, skip_sid=request.sid, broadcast=True)
     return {'squares':game.squares, 'turn':game.turn.value}
 
 @socket.on('connect4Move')

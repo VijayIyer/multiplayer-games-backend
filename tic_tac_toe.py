@@ -55,10 +55,13 @@ class TicTacToeGame:
             if self.state == GameState.NOT_STARTED:
                 self.state = GameState.STARTED
             self.squares[pos] = 'X' if self.turn == Turn.X else 'O'
-            self.update_turn()
+            
             self.winner = self.calculate_winner(self.squares)
             if self.winner is not None:
                 self.state = GameState.OVER
+            else:
+                # update turn only if game is not over to give the other player permission to make move
+                self.update_turn()
     
     def update_turn(self):
         if self.turn == Turn.X:
@@ -82,7 +85,6 @@ class TicTacToeGame:
         ];
         for i in range(len(lines)):
             a, b, c = lines[i]
-            print(a, b, c)
             if ((squares[a] == squares[b] == squares[c]) and (squares[a] == 'X' or squares[a] == 'O')):
                 return (a,b,c)
         return None
