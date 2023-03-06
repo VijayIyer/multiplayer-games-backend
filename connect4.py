@@ -97,9 +97,9 @@ class Connect4:
         result  = False
         rows = self.num_rows;
         cols = self.num_cols;
+        print('checking vertical cells')
         for i in range(rows - 3):
             for j in range(cols):
-                print(i, j)
                 values = [self.filled[i*cols+j], self.filled[(i+1)*cols+j], self.filled[(i+2)*cols+j], self.filled[(i+3)*cols+j]]
                 if all(x == values[0] for x in values) and (self.filled[i * cols + j] == 'blue' or self.filled[i * cols + j] == 'red'):
                     print([(i*cols)+j, (i+1)*cols + j, (i+2)*cols+j, (i+3)*cols+j])
@@ -110,9 +110,9 @@ class Connect4:
         result  = False
         rows = self.num_rows;
         cols = self.num_cols;
+        print('checking horizontal cells')
         for i in range(rows):
             for j in range(cols - 3):
-                print(i, j)
                 values = [self.filled[i*cols+j], self.filled[i*cols+(j+1)], self.filled[i*cols+(j+2)], self.filled[i*cols+(j+3)]]
                 if all(x == values[0] for x in values) and (self.filled[i * cols + j] == 'blue' or self.filled[i * cols + j] == 'red'):
                     print([i*cols+j, i*cols + (j+1), i*cols+(j+2), i*cols+(j+3)])
@@ -121,24 +121,25 @@ class Connect4:
 
     def checkLeftRightCells(self):
         result  = False
-        rows = self.num_rows;
-        cols = self.num_cols;
+        rows = self.num_rows
+        cols = self.num_cols
+        print('checking leftright cells')
         for i in range(rows - 3):
-            for j in range(cols - 1, cols - 3, -1):
-                print(i, j)
+            for j in range(cols - 1, cols - 4, -1):
+                
                 values = [self.filled[i*cols+j], self.filled[(i+1)*cols+(j - 1)], self.filled[(i+2)*cols+(j - 2)], self.filled[(i+3)*cols+(j - 3)]]
                 if all(x == values[0] for x in values) and (self.filled[i * cols + j] == 'blue' or self.filled[i * cols + j] == 'red'):
                     print([(i*cols)+j, (i+1)*cols + (j - 1), (i+2)*cols+(j - 2), (i+3)*cols+(j - 3)])
-                    return [(i*cols)+j, (i+1)*cols + (j - 1), (i+2)*cols+(j - 1), (i+3)*cols+(j - 3)]
+                    return [(i*cols)+j, (i+1)*cols + (j - 1), (i+2)*cols+(j - 2), (i+3)*cols+(j - 3)]
         return None
 
     def checkRightLeftCells(self):
         result  = False
-        rows = self.num_rows;
-        cols = self.num_cols;
+        rows = self.num_rows
+        cols = self.num_cols
+        print('checking rightleft cells')
         for i in range(rows - 3):
             for j in range(cols - 3):
-                print(i, j)
                 values = [self.filled[i*cols+j], self.filled[(i+1)*cols+(j+1)], self.filled[(i+2)*cols+(j+2)], self.filled[(i+3)*cols+(j+3)]]
                 if all(x == values[0] for x in values) and (self.filled[i * cols + j] == 'blue' or self.filled[i * cols + j] == 'red'):
                     print([(i*cols)+j, (i+1)*cols + (j+1), (i+2)*cols+(j+2), (i+3)*cols+(j+3)])
