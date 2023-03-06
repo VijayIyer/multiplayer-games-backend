@@ -1,33 +1,24 @@
 from enum import Enum
-
-class GameState(Enum):
-    NOT_STARTED=1
-    STARTED=2
-    OVER=3
-
-class GameType(Enum):
-    SINGLE_PLAYER=1
-    MULTIPLAYER=2
-
-class UserType(Enum):
-    OBSERVER=1
-    PLAYER=2
+from .user import User
+from .enums import GameState, GameType, UserType
+from .game import Game
 
 class Turn(Enum):
     RED=0
     BLUE=1
 
-class User():
-    def __init__(self, user_id, user_name, user_type = UserType.PLAYER):
-        self.user_type = user_type
-        self.id = user_id
-        self.name = user_name
+# class User():
+#     def __init__(self, user_id, user_name, user_type = UserType.PLAYER):
+#         self.user_type = user_type
+#         self.id = user_id
+#         self.name = user_name
 
-class Connect4:
-    _games  = []
+class Connect4(Game):
     def __init__(self, game_type = GameType.MULTIPLAYER, num_rows = 8, num_cols = 6):
-        self.id = len(Connect4._games)
-        Connect4._games.append(self)
+        super().__init__()
+        self.id = len(Game._games)
+        Game._games.append(self)
+        self.type = 'Connect4'
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.filled = [-1 for _ in range(num_rows * num_cols)]
@@ -35,28 +26,13 @@ class Connect4:
         self.winningCircles = []
         self.state = GameState.NOT_STARTED
         self.game_type = game_type # for later, AI agent
-        self.users = []
         self.turn = Turn.RED
         self.winner = None
         self.verticalCellsInARow = None
         self.horizontalCellsInARow = None
         self.leftRightCellsInARow = None
         self.rightLeftCellsInARow = None
-    
-    def __repr__(self):
-        return f'game id : {self.id}, game state:{self.state}'
-    def add_user(self, user):
-        new_user = User(user['id'], user['name'])
-        if len([user for user in self.users if user.user_type == UserType.PLAYER]) == 2:
-            new_user.user_type = UserType.OBSERVER
-        else:
-            new_user.user_type = UserType.PLAYER
-        self.users.append(user)
-    
-    def check_user(self, user):
-        if user in self.users:
-            return True
-        return False
+        
     
     def move(self, pos):
         if self.state == GameState.NOT_STARTED:
@@ -69,7 +45,8 @@ class Connect4:
             print(f'winnign circles - {self.winner}')
         else:
             self.update_turn()
-    
+
+    # needs to be in game interface?
     def update_turn(self):
         if self.turn == Turn.BLUE:
             self.turn = Turn.RED

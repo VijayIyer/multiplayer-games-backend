@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, send, emit
 from flask_ngrok import run_with_ngrok
 from app import socket
+from app.games.game import Game
 from app.games.tic_tac_toe import GameState, GameType, UserType ,TicTacToeGame, User
 from app.games.connect4 import Connect4, Turn as Connect4Turn, GameState as Connect4GameState
 
@@ -28,7 +29,7 @@ def create_new_game(user_info):
 def get_ongoing_game(game_info):
     # print(f'\ntrying to fetch game {game_info["id"]}')
     # print([game for game in TicTacToeGame._games])
-    existing_game = list(filter(lambda game: game.id == int(game_info['id']), TicTacToeGame._games))[0]
+    existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
     emit('ongoingGameDetails', 
         { 
         'id':existing_game.id, 
@@ -49,7 +50,7 @@ def create_new_connect4_game(user_info):
 def get_ongoing_connect4_game(game_info):
     #print(f'\ntrying to fetch game {game_info["id"]}')
     #print([game for game in Connect4._games])
-    existing_game = list(filter(lambda game: game.id == int(game_info['id']), Connect4._games))[0]
+    existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
     emit('ongoingConnect4GameDetails', 
         { 'id':existing_game.id,
          'filled':existing_game.filled, 
@@ -77,11 +78,12 @@ def test_connect():
 @socket.on('getAllOngoingGames')
 def get_all_ongoing_games():
     # print(f'getting all onging games: {Connect4._games}')
-    return list(map(lambda x: {'gameId':x.id, 'type':'Tic Tac Toe'}, TicTacToeGame._games)) + list(map(lambda x: {'gameId':x.id, 'type':'Connect4'}, Connect4._games))
+    return list(map(lambda x: {'gameId':x.id, 'type':x.type}, Game._games))
 
 @socket.on('move')
 def move(move):
-    game = TicTacToeGame._games[move['gameId']]
+    print(Game._games)
+    game = Game._games[move['gameId']]
     if game.is_game_over():
         # print('game over!')
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner}, to=request.sid)
@@ -97,7 +99,7 @@ def move(move):
 @socket.on('connect4Move')
 def make_connect4_move(move):
     
-    game = Connect4._games[move['gameId']]
+    game = Game._games[move['gameId']]
     # print(f'turn is {game.turn}')
     # game changes based on move
     pos = move['cellNumber']

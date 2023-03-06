@@ -1,17 +1,7 @@
 from enum import Enum
-
-class GameState(Enum):
-    NOT_STARTED=1
-    STARTED=2
-    OVER=3
-
-class GameType(Enum):
-    SINGLE_PLAYER=1
-    MULTIPLAYER=2
-
-class UserType(Enum):
-    OBSERVER=1
-    PLAYER=2
+from .user import User
+from .enums import GameState, GameType, UserType
+from .game import Game
 
 class Turn(Enum):
     X=0
@@ -23,32 +13,18 @@ class User():
         self.id = user_id
         self.name = user_name
 
-class TicTacToeGame:
+class TicTacToeGame(Game):
     _games  = []
     def __init__(self, game_type = GameType.MULTIPLAYER):
-        self.id = len(TicTacToeGame._games)
-        TicTacToeGame._games.append(self)
+        super().__init__()
+        self.id = len(Game._games)
+        Game._games.append(self)
+        self.type = 'Tic Tac Toe'
         self.squares = [-1 for _ in range(9)]
         self.state = GameState.NOT_STARTED
         self.game_type = game_type
-        self.users = []
         self.turn = Turn.X
         self.winner = None
-    
-    def __repr__(self):
-        return f'game id : {self.id}, game state:{self.state}'
-    def add_user(self, user):
-        new_user = User(user['id'], user['name'])
-        if len([user for user in self.users if user.user_type == UserType.PLAYER]) == 2:
-            new_user.user_type = UserType.OBSERVER
-        else:
-            new_user.user_type = UserType.PLAYER
-        self.users.append(user)
-    
-    def check_user(self, user):
-        if user in self.users:
-            return True
-        return False
     
     def move(self, pos):
         if self.squares[pos] == -1:
@@ -63,6 +39,7 @@ class TicTacToeGame:
                 # update turn only if game is not over to give the other player permission to make move
                 self.update_turn()
     
+    # needs to be in the game interface
     def update_turn(self):
         if self.turn == Turn.X:
             self.turn = Turn.O
