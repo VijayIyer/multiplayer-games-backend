@@ -7,11 +7,11 @@ class Turn(Enum):
     X=0
     O=1
 
-class User():
-    def __init__(self, user_id, user_name, user_type = UserType.PLAYER):
-        self.user_type = user_type
-        self.id = user_id
-        self.name = user_name
+# class User():
+#     def __init__(self, user_id, user_name, user_type = UserType.PLAYER):
+#         self.user_type = user_type
+#         self.id = user_id
+#         self.name = user_name
 
 class TicTacToeGame(Game):
     _games  = []

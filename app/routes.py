@@ -9,6 +9,7 @@ from app.games.connect4 import Connect4, Turn as Connect4Turn, GameState as Conn
 
 @app.route('/')
 def test():
+    print('hello world!')
     return 'Hello World!'
 
 @socket.on('createTicTacToeGame')
