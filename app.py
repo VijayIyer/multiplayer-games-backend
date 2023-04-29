@@ -1,4 +1,4 @@
-from app import create_app, socket
+from application import create_app, socket
 
 app = create_app(debug=True)
 
