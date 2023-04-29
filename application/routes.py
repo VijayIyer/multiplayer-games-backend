@@ -3,11 +3,11 @@ from flask_login import current_user, login_required
 from flask_cors import CORS
 from flask_socketio import SocketIO, send, emit
 from flask_ngrok import run_with_ngrok
-from app import socket
-from app.auth import authenticated_only
-from app.games.game import Game
-from app.games.tic_tac_toe import GameState, GameType, UserType ,TicTacToeGame, User
-from app.games.connect4 import Connect4, Turn as Connect4Turn, GameState as Connect4GameState
+from application import socket
+from application.auth import authenticated_only
+from application.games.game import Game
+from application.games.tic_tac_toe import GameState, GameType, UserType ,TicTacToeGame, User
+from application.games.connect4 import Connect4, Turn as Connect4Turn, GameState as Connect4GameState
 
 
 @app.route('/test')
