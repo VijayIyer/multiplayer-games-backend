@@ -19,7 +19,17 @@ def create_app(debug=False):
     db.init_app(app)
     login_manager.init_app(app)
     with app.app_context():
+        
         from . import auth
         from . import routes
         from . import models
+        # Create Database Models
+        db.create_all()
+        @login_manager.user_loader
+        def load_user(user_id):
+            """Check if user is logged-in on every page load."""
+            print('loading user')
+            if user_id is not None:
+                return User.query.get(user_id)
+            return None
     return app

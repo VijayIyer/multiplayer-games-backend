@@ -1,8 +1,24 @@
-from flask_login import login_user, login_required, logout_user
+from flask_login import login_user, login_required, logout_user,current_user
+import functools
+
 from flask import request, flash, current_app as app, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User
 from . import db
+from . import login_manager
+
+
+
+def authenticated_only(f):
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        # print(current_user.email)
+        if not current_user.is_authenticated:
+            # print(f'{current_user} - unauthorized')
+            return make_response({'message':'unauthenticated'}, 401)
+        else:
+            return f(*args, **kwargs)
+    return wrapped
 
 @app.route('/login')
 def login_get():
@@ -25,7 +41,6 @@ def signup_get():
 @app.route('/login', methods=['POST'])
 def login_post():
     # login code goes here
-    print(request.json)
     email = request.json.get('email')
     password = request.json.get('password')
     remember = True if request.json.get('remember') else False
@@ -38,14 +53,15 @@ def login_post():
         return make_response({'message':'Incorrect email or password'}, 401) # if the user doesn't exist or password is wrong, reload the page
     logged_in = login_user(user, remember=remember)
     if logged_in:
-        print('user logged in')
+        # print('user logged in')
         return make_response({'message':'logged in successfully'}, 200)
     return make_response({'message':'log in failed'}, 401)
 
 
 @app.route('/signup', methods=['POST'])
 def signup_post():
-    print(request.json)
+    # print(request.json)
+    # print(f'{User.query.all()}')
     body = request.json
     email = body['email']
     name = body['name']
@@ -62,6 +78,7 @@ def signup_post():
     # add the new user to the database
     db.session.add(new_user)
     db.session.commit()
+    print('added new user to Users table')
     # code to validate and add user to database goes here
     return make_response({'message':'User registered'}, 201)
 
