@@ -1,14 +1,20 @@
 from flask import Flask, json, request, current_app as app, session
-from flask_login import current_user, login_required
+# from flask_login import current_user, login_required
 from flask_cors import CORS
 from flask_socketio import SocketIO, send, emit
 from flask_ngrok import run_with_ngrok
 from application import socket
+from application.auth import auth
 from application.auth import authenticated_only
 from application.games.game import Game
 from application.games.tic_tac_toe import GameState, GameType, UserType ,TicTacToeGame, User
 from application.games.connect4 import Connect4, Turn as Connect4Turn, GameState as Connect4GameState
 
+
+@app.route('/login_required')
+@auth.login_required
+def login_required_route():
+    return f'Hello login required! - {auth.current_user()}'
 
 @app.route('/test')
 def test():
@@ -17,7 +23,7 @@ def test():
     return 'Hello test!'
 
 @app.route('/test1')
-@login_required
+# @login_required
 def test1(user):
     print([f'{k}:{v}' for k,v in request.cookies.items()])
     print('hello world!')
@@ -32,7 +38,7 @@ def test2():
 @socket.on('createTicTacToeGame')
 def create_new_game(user_info):
     print('creating new game')
-    print(f'{current_user.is_authenticated}')
+    # print(f'{current_user.is_authenticated}')
     new_game = TicTacToeGame()
     new_game.add_user({'id':request.sid, 'name':user_info['name']})
     emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe'}, broadcast=True)

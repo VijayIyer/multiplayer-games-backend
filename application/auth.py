@@ -1,13 +1,21 @@
-from flask_login import login_user, login_required, logout_user,current_user
+# from flask_login import login_user, login_required, logout_user,current_user
 import functools
-
+from flask_httpauth import HTTPTokenAuth
 from flask import request, flash, current_app as app, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User
 from . import db
-from . import login_manager
 
+auth = HTTPTokenAuth(scheme='Bearer')
+tokens = {
+    "secret-token-1": "john",
+    "secret-token-2": "susan"
+}
 
+@auth.verify_token
+def verify_token(token):
+    if token in tokens:
+        return tokens[token]
 
 def authenticated_only(f):
     @functools.wraps(f)
@@ -60,17 +68,14 @@ def login_post():
 
 @app.route('/signup', methods=['POST'])
 def signup_post():
-    # print(request.json)
-    # print(f'{User.query.all()}')
     body = request.json
     email = body['email']
     name = body['name']
     password = body['password']
-
     user = User.query.filter_by(email=email).first() # if this returns a user, then the email already exists in database
 
-    if user: # if a user is found, we want to redirect back to signup page so user can try again
-        return make_response({'message':'Email address already exists'}, 401)
+    if user: # if a user is found, return 409 unauthorized because user already exists
+        return make_response({'message':'Email address already exists'}, 409)
 
     # create a new user with the form data. Hash the password so the plaintext version isn't saved.
     new_user = User(email=email, name=name, password=generate_password_hash(password, method='sha256'))
@@ -83,7 +88,7 @@ def signup_post():
     return make_response({'message':'User registered'}, 201)
 
 @app.route('/logout')
-@login_required
+# @login_required
 def logout():
     try:
         logout_user()
