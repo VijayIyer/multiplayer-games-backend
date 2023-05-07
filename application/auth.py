@@ -2,31 +2,67 @@
 import functools
 from flask_httpauth import HTTPTokenAuth
 from flask import request, flash, current_app as app, make_response
+from flask.json import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 from .models import User
 from . import db
+import datetime
+from application import socket
+import jwt
 
 auth = HTTPTokenAuth(scheme='Bearer')
-tokens = {
-    "secret-token-1": "john",
-    "secret-token-2": "susan"
-}
 
 @auth.verify_token
 def verify_token(token):
-    if token in tokens:
-        return tokens[token]
+    data = jwt.decode(token, app.config['SECRET_KEY'], algorithms='HS256')
+    try:
+        current_user = User.query.get(data['user_id'])
+        print(current_user)
+        return current_user
+    except Exception as e:
+        print(e)
+        return
+    
+def socket_token_required(func):
+    def decorated(*args, **kwargs):
+        if not 'token' in args[0].keys():
+            socket.emit('userUnauthorized')
+            return
+        try:
+            token = args[0]['token']
+            print(token)
+            data = jwt.decode(token, app.config['SECRET_KEY'],algorithms='HS256')
+            current_user = User.query.get(data['user_id'])
+            # check if current_user should be able to make the socket emit event
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(e)
+            return None
+    return decorated
 
-def authenticated_only(f):
-    @functools.wraps(f)
-    def wrapped(*args, **kwargs):
-        # print(current_user.email)
-        if not current_user.is_authenticated:
-            # print(f'{current_user} - unauthorized')
-            return make_response({'message':'unauthenticated'}, 401)
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split(' ')[1]
         else:
-            return f(*args, **kwargs)
-    return wrapped
+            return jsonify({'message':'Token is missing'}), 401
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'],algorithms='HS256')
+            print(f'data in token if {data}')
+            currentUser = User.query.get(data['user_id'])
+        except Exception as e:
+            print(e)            
+            return jsonify({'message':'Token is invalid'}), 401
+        
+        return f(currentUser, *args, **kwargs)
+    return decorated
+
+@app.route('/user')
+@token_required
+def get_user(user):
+    return make_response({'email':user.email, 'name':user.name}, 200)
 
 @app.route('/login')
 def login_get():
@@ -59,11 +95,8 @@ def login_post():
     if not user or not check_password_hash(user.password, password):
         #flash('Please check your login details and try again.')
         return make_response({'message':'Incorrect email or password'}, 401) # if the user doesn't exist or password is wrong, reload the page
-    logged_in = login_user(user, remember=remember)
-    if logged_in:
-        # print('user logged in')
-        return make_response({'message':'logged in successfully'}, 200)
-    return make_response({'message':'log in failed'}, 401)
+    token = jwt.encode({'user_id':user.id, 'exp':datetime.datetime.utcnow()+datetime.timedelta(hours=2)},app.config['SECRET_KEY'])
+    return make_response({'message':'logged in successfully!', 'token':token}, 200)
 
 
 @app.route('/signup', methods=['POST'])
@@ -84,8 +117,9 @@ def signup_post():
     db.session.add(new_user)
     db.session.commit()
     print('added new user to Users table')
+    token = jwt.encode({'user_id':new_user.id, 'exp':datetime.datetime.utcnow()+datetime.timedelta(hours=2)},app.config['SECRET_KEY'])
     # code to validate and add user to database goes here
-    return make_response({'message':'User registered'}, 201)
+    return make_response({'message':'User registered', 'token':token}, 201)
 
 @app.route('/logout')
 # @login_required
