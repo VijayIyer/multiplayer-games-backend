@@ -13,7 +13,7 @@ from application.games.connect4 import Connect4, Turn as Connect4Turn, GameState
 
 
 @app.route('/login_required')
-@token_required
+# @token_required
 def login_required_route(user):
     return f'Hello login required! - {user.email}, {user.name}'
 
@@ -24,7 +24,7 @@ def test():
     return 'Hello test!'
 
 @app.route('/test1')
-@token_required
+# @token_required
 def test1(user):
     # print([f'{k}:{v}' for k,v in request.cookies.items()])
     # print('hello world!')
@@ -38,11 +38,11 @@ def test2():
 
 @socket.on('createTicTacToeGame')
 @socket_token_required
-def create_new_game(user_info):
+def create_new_game(current_user, user_info):
     print('creating new game')
     print(f"{user_info['token']}")
     new_game = TicTacToeGame()
-    new_game.add_user({'id':request.sid, 'name':user_info['name']})
+    new_game.add_user({'id':request.sid, 'name':current_user.name})
     emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe'}, broadcast=True)
     emit('newGameDetails', 
         { 
@@ -54,8 +54,7 @@ def create_new_game(user_info):
 
 @socket.on('getExistingTicTacToeGame')
 def get_ongoing_game(game_info):
-    # print(f'\ntrying to fetch game {game_info["id"]}')
-    # print([game for game in TicTacToeGame._games])
+    
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
     emit('ongoingGameDetails', 
         { 
@@ -66,17 +65,16 @@ def get_ongoing_game(game_info):
         } , to=request.sid)
 
 @socket.on('createConnect4Game')
-def create_new_connect4_game(user_info):
+@socket_token_required
+def create_new_connect4_game(current_user, user_info):
     print('creating new game')
     new_game = Connect4()
-    new_game.add_user({'id':request.sid, 'name':user_info['name']})
+    new_game.add_user({'id':request.sid, 'name':current_user.name})
     emit('newGameCreated', {'gameId': new_game.id, 'type':'Connect4'}, broadcast=True)
     emit('newConnect4GameDetails', { 'id':new_game.id, 'allowed':new_game.allowed, 'filled':new_game.filled, 'winningCircles':new_game.winningCircles } , to=request.sid)
 
 @socket.on('getExistingConnect4Game')
 def get_ongoing_connect4_game(game_info):
-    #print(f'\ntrying to fetch game {game_info["id"]}')
-    #print([game for game in Connect4._games])
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
     emit('ongoingConnect4GameDetails', 
         { 'id':existing_game.id,

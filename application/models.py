@@ -19,4 +19,4 @@ class User(db.Model):
         return check_password_hash(self.password, password)
     
     def __str__(self):
-        print(f'{self.id} {self.email} {self.name}')
+        return f'{self.id} {self.email} {self.name}'

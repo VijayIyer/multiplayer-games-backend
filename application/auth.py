@@ -23,9 +23,12 @@ def verify_token(token):
     except Exception as e:
         print(e)
         return
-    
-def socket_token_required(func):
+
+# middleware to check authentication for web socket    
+def socket_token_required(f):
+    @wraps(f)
     def decorated(*args, **kwargs):
+        print('{0}'.format(f))
         if not 'token' in args[0].keys():
             socket.emit('userUnauthorized')
             return
@@ -34,26 +37,29 @@ def socket_token_required(func):
             print(token)
             data = jwt.decode(token, app.config['SECRET_KEY'],algorithms='HS256')
             current_user = User.query.get(data['user_id'])
+            print('{0}'.format(current_user))
             # check if current_user should be able to make the socket emit event
-            return func(*args, **kwargs)
+            return f(current_user, *args, **kwargs)
         except Exception as e:
-            print(e)
+            print(f'socket token required failing with this - {e}') 
             return None
     return decorated
 
+# middleware to check authentication for http requests
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        print(f)
         if 'Authorization' in request.headers:
             token = request.headers['Authorization'].split(' ')[1]
         else:
             return jsonify({'message':'Token is missing'}), 401
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'],algorithms='HS256')
-            print(f'data in token if {data}')
+            print(f'data in token is {data}')
             currentUser = User.query.get(data['user_id'])
         except Exception as e:
-            print(e)            
+            print(f'socket token required failing with this - {e}')            
             return jsonify({'message':'Token is invalid'}), 401
         
         return f(currentUser, *args, **kwargs)
