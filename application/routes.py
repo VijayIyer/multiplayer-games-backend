@@ -43,7 +43,7 @@ def create_new_game(current_user, user_info):
     new_game = TicTacToeGame()
     new_game.add_user(current_user)
     new_game.assign_user_turn(current_user)
-    emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe'}, broadcast=True)
+    emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe', 'users':[user.name for user in new_game.users]}, broadcast=True)
     emit('newGameDetails', 
         { 
         'id':new_game.id,
@@ -75,7 +75,7 @@ def create_new_connect4_game(current_user, user_info):
     new_game = Connect4()
     new_game.add_user(current_user)
     new_game.assign_user_turn(current_user)
-    emit('newGameCreated', {'gameId': new_game.id, 'type':'Connect4'}, broadcast=True)
+    emit('newGameCreated', {'gameId': new_game.id, 'type':'Connect4', 'users':[user.name for user in new_game.users]}, broadcast=True)
     emit('newConnect4GameDetails', { 'id':new_game.id, 'allowed':new_game.allowed, 'filled':new_game.filled, 'winningCircles':new_game.winningCircles } , to=request.sid)
 
 @socket.on('getExistingConnect4Game')
@@ -112,7 +112,7 @@ def test_connect():
 @socket.on('getAllOngoingGames')
 def get_all_ongoing_games():
     # print(f'getting all onging games: {Connect4._games}')
-    return list(map(lambda x: {'gameId':x.id, 'type':x.type}, Game._games))
+    return list(map(lambda x: {'gameId':x.id, 'type':x.type, 'users':[user.name for user in x.users]}, Game._games))
 
 @socket.on('move')
 @socket_token_required
