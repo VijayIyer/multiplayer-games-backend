@@ -10,32 +10,6 @@ from application.games.game import Game
 from application.games.tic_tac_toe import GameState, GameType, UserType ,TicTacToeGame, User
 from application.games.connect4 import Connect4, Turn as Connect4Turn, GameState as Connect4GameState
 
-
-
-@app.route('/login_required')
-# @token_required
-def login_required_route(user):
-    return f'Hello login required! - {user.email}, {user.name}'
-
-@app.route('/test')
-def test():
-    print([f'{k}:{v}' for k,v in request.cookies.items()])
-    print('hello world!')
-    return 'Hello test!'
-
-@app.route('/test1')
-# @token_required
-def test1(user):
-    # print([f'{k}:{v}' for k,v in request.cookies.items()])
-    # print('hello world!')
-    return f'Hello login required test1 route! - {user.email}, {user.name}'
-
-@app.route('/test2')
-def test2():
-    print([f'{k}:{v}' for k,v in request.cookies.items()])
-    print('hello world!')
-    return 'Hello test2!'
-
 @socket.on('createTicTacToeGame')
 @socket_token_required
 def create_new_game(current_user, user_info):
