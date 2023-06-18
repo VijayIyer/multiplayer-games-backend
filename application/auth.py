@@ -28,16 +28,14 @@ def verify_token(token):
 def socket_token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        print('{0}'.format(f))
+        
         if not 'token' in args[0].keys():
             socket.emit('userUnauthorized')
             return
         try:
             token = args[0]['token']
-            print(token)
             data = jwt.decode(token, app.config['SECRET_KEY'],algorithms='HS256')
             current_user = User.query.get(data['user_id'])
-            print('{0}'.format(current_user))
             # check if current_user should be able to make the socket emit event
             return f(current_user, *args, **kwargs)
         except Exception as e:

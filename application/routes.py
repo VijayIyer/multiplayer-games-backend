@@ -39,10 +39,10 @@ def test2():
 @socket.on('createTicTacToeGame')
 @socket_token_required
 def create_new_game(current_user, user_info):
-    print('creating new game')
-    print(f"{user_info['token']}")
+    print('creating new game....')
     new_game = TicTacToeGame()
-    new_game.add_user({'id':request.sid, 'name':current_user.name})
+    new_game.add_user(current_user)
+    new_game.assign_user_turn(current_user)
     emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe'}, broadcast=True)
     emit('newGameDetails', 
         { 
@@ -53,9 +53,13 @@ def create_new_game(current_user, user_info):
         } , to=request.sid)
 
 @socket.on('getExistingTicTacToeGame')
-def get_ongoing_game(game_info):
+@socket_token_required
+def get_ongoing_game(current_user, game_info):
     
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
+    if not existing_game.check_user(current_user):
+        existing_game.add_user(current_user)
+        existing_game.assign_user_turn(current_user)
     emit('ongoingGameDetails', 
         { 
         'id':existing_game.id, 
@@ -69,13 +73,18 @@ def get_ongoing_game(game_info):
 def create_new_connect4_game(current_user, user_info):
     print('creating new game')
     new_game = Connect4()
-    new_game.add_user({'id':request.sid, 'name':current_user.name})
+    new_game.add_user(current_user)
+    new_game.assign_user_turn(current_user)
     emit('newGameCreated', {'gameId': new_game.id, 'type':'Connect4'}, broadcast=True)
     emit('newConnect4GameDetails', { 'id':new_game.id, 'allowed':new_game.allowed, 'filled':new_game.filled, 'winningCircles':new_game.winningCircles } , to=request.sid)
 
 @socket.on('getExistingConnect4Game')
-def get_ongoing_connect4_game(game_info):
+@socket_token_required
+def get_ongoing_connect4_game(current_user, game_info):
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
+    if not existing_game.check_user(current_user):
+        existing_game.add_user(current_user)
+        existing_game.assign_user_turn(current_user)
     emit('ongoingConnect4GameDetails', 
         { 'id':existing_game.id,
          'filled':existing_game.filled, 
@@ -106,15 +115,15 @@ def get_all_ongoing_games():
     return list(map(lambda x: {'gameId':x.id, 'type':x.type}, Game._games))
 
 @socket.on('move')
-def move(move):
-    print(Game._games)
+@socket_token_required
+def move(current_user, move):
     game = Game._games[move['gameId']]
     if game.is_game_over():
         # print('game over!')
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner}, to=request.sid)
         return {'squares':game.squares, 'turn':game.turn.value}
     pos = move['pos']
-    game.move(pos)
+    game.move(current_user, pos)
     if game.winner is not None:
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner, 'turn': game.turn.value}, broadcast=True)
 
@@ -122,14 +131,17 @@ def move(move):
     return {'squares':game.squares, 'turn':game.turn.value}
 
 @socket.on('connect4Move')
-def make_connect4_move(move):
+@socket_token_required
+def make_connect4_move(current_user, move):
     
     game = Game._games[move['gameId']]
     # print(f'turn is {game.turn}')
     # game changes based on move
     pos = move['cellNumber']
-    if(int(pos) in game.allowed and game.filled[int(pos)] == -1):
-        game.move(pos)
+    user_type = [x.user_type for x in game.users if x.id == current_user.id][0]
+    user_turn = [x.turn for x in game.users if x.id == current_user.id][0]
+    if(game.check_user(current_user) and game.turn == user_turn and user_type == UserType.PLAYER and int(pos) in game.allowed and game.filled[int(pos)] == -1):
+        game.move(current_user, pos)
         if game.is_game_over():
             emit('connect4gameover', 
                 {'winningCircles': game.winningCircles,
