@@ -7,8 +7,9 @@ from application import socket
 from application.auth import auth
 from application.auth import token_required, socket_token_required
 from application.games.game import Game
-from application.games.tic_tac_toe import GameState, GameType, UserType ,TicTacToeGame, User
-from application.games.connect4 import Connect4, Turn as Connect4Turn, GameState as Connect4GameState
+from application.games.enums import GameState, GameType, UserType
+from application.games.tic_tac_toe import TicTacToeGame
+from application.games.connect4 import Connect4
 
 @socket.on('createTicTacToeGame')
 @socket_token_required
