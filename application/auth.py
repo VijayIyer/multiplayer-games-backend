@@ -124,12 +124,3 @@ def signup_post():
     token = jwt.encode({'user_id':new_user.id, 'exp':datetime.datetime.utcnow()+datetime.timedelta(hours=2)},app.config['SECRET_KEY'])
     # code to validate and add user to database goes here
     return make_response({'message':'User registered', 'token':token}, 201)
-
-@app.route('/logout')
-# @login_required
-def logout():
-    try:
-        logout_user()
-        return make_response({'message':'logged out successfully!'}, 201)
-    except Exception as e:
-        return make_response({'message':f'logout failed with exception : {e}'}, 404)
