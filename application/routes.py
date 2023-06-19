@@ -1,14 +1,21 @@
 from flask import Flask, json, request, current_app as app, session
-from flask_login import current_user, login_required
+# from flask_login import current_user, login_required
 from flask_cors import CORS
 from flask_socketio import SocketIO, send, emit
 from flask_ngrok import run_with_ngrok
 from application import socket
-from application.auth import authenticated_only
+from application.auth import auth
+from application.auth import token_required, socket_token_required
 from application.games.game import Game
 from application.games.tic_tac_toe import GameState, GameType, UserType ,TicTacToeGame, User
 from application.games.connect4 import Connect4, Turn as Connect4Turn, GameState as Connect4GameState
 
+
+
+@app.route('/login_required')
+# @token_required
+def login_required_route(user):
+    return f'Hello login required! - {user.email}, {user.name}'
 
 @app.route('/test')
 def test():
@@ -17,11 +24,11 @@ def test():
     return 'Hello test!'
 
 @app.route('/test1')
-@login_required
+# @token_required
 def test1(user):
-    print([f'{k}:{v}' for k,v in request.cookies.items()])
-    print('hello world!')
-    return 'Hello test1!'
+    # print([f'{k}:{v}' for k,v in request.cookies.items()])
+    # print('hello world!')
+    return f'Hello login required test1 route! - {user.email}, {user.name}'
 
 @app.route('/test2')
 def test2():
@@ -30,12 +37,13 @@ def test2():
     return 'Hello test2!'
 
 @socket.on('createTicTacToeGame')
-def create_new_game(user_info):
-    print('creating new game')
-    print(f'{current_user.is_authenticated}')
+@socket_token_required
+def create_new_game(current_user, user_info):
+    print('creating new game....')
     new_game = TicTacToeGame()
-    new_game.add_user({'id':request.sid, 'name':user_info['name']})
-    emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe'}, broadcast=True)
+    new_game.add_user(current_user)
+    new_game.assign_user_turn(current_user)
+    emit('newGameCreated', {'gameId': new_game.id, 'type':'Tic Tac Toe', 'users':[user.name for user in new_game.users]}, broadcast=True)
     emit('newGameDetails', 
         { 
         'id':new_game.id,
@@ -45,10 +53,13 @@ def create_new_game(user_info):
         } , to=request.sid)
 
 @socket.on('getExistingTicTacToeGame')
-def get_ongoing_game(game_info):
-    # print(f'\ntrying to fetch game {game_info["id"]}')
-    # print([game for game in TicTacToeGame._games])
+@socket_token_required
+def get_ongoing_game(current_user, game_info):
+    
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
+    if not existing_game.check_user(current_user):
+        existing_game.add_user(current_user)
+        existing_game.assign_user_turn(current_user)
     emit('ongoingGameDetails', 
         { 
         'id':existing_game.id, 
@@ -58,18 +69,22 @@ def get_ongoing_game(game_info):
         } , to=request.sid)
 
 @socket.on('createConnect4Game')
-def create_new_connect4_game(user_info):
+@socket_token_required
+def create_new_connect4_game(current_user, user_info):
     print('creating new game')
     new_game = Connect4()
-    new_game.add_user({'id':request.sid, 'name':user_info['name']})
-    emit('newGameCreated', {'gameId': new_game.id, 'type':'Connect4'}, broadcast=True)
+    new_game.add_user(current_user)
+    new_game.assign_user_turn(current_user)
+    emit('newGameCreated', {'gameId': new_game.id, 'type':'Connect4', 'users':[user.name for user in new_game.users]}, broadcast=True)
     emit('newConnect4GameDetails', { 'id':new_game.id, 'allowed':new_game.allowed, 'filled':new_game.filled, 'winningCircles':new_game.winningCircles } , to=request.sid)
 
 @socket.on('getExistingConnect4Game')
-def get_ongoing_connect4_game(game_info):
-    #print(f'\ntrying to fetch game {game_info["id"]}')
-    #print([game for game in Connect4._games])
+@socket_token_required
+def get_ongoing_connect4_game(current_user, game_info):
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
+    if not existing_game.check_user(current_user):
+        existing_game.add_user(current_user)
+        existing_game.assign_user_turn(current_user)
     emit('ongoingConnect4GameDetails', 
         { 'id':existing_game.id,
          'filled':existing_game.filled, 
@@ -91,24 +106,24 @@ def join_game():
 @socket.on('connect')
 def test_connect():
     #global squares
-    # print(f'connection request recieved from {request.sid}');
+    print(f'connection request recieved from {request.sid}');
     send('connected!')
 
 @socket.on('getAllOngoingGames')
 def get_all_ongoing_games():
     # print(f'getting all onging games: {Connect4._games}')
-    return list(map(lambda x: {'gameId':x.id, 'type':x.type}, Game._games))
+    return list(map(lambda x: {'gameId':x.id, 'type':x.type, 'users':[user.name for user in x.users]}, Game._games))
 
 @socket.on('move')
-def move(move):
-    print(Game._games)
+@socket_token_required
+def move(current_user, move):
     game = Game._games[move['gameId']]
     if game.is_game_over():
         # print('game over!')
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner}, to=request.sid)
         return {'squares':game.squares, 'turn':game.turn.value}
     pos = move['pos']
-    game.move(pos)
+    game.move(current_user, pos)
     if game.winner is not None:
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner, 'turn': game.turn.value}, broadcast=True)
 
@@ -116,14 +131,17 @@ def move(move):
     return {'squares':game.squares, 'turn':game.turn.value}
 
 @socket.on('connect4Move')
-def make_connect4_move(move):
+@socket_token_required
+def make_connect4_move(current_user, move):
     
     game = Game._games[move['gameId']]
     # print(f'turn is {game.turn}')
     # game changes based on move
     pos = move['cellNumber']
-    if(int(pos) in game.allowed and game.filled[int(pos)] == -1):
-        game.move(pos)
+    user_type = [x.user_type for x in game.users if x.id == current_user.id][0]
+    user_turn = [x.turn for x in game.users if x.id == current_user.id][0]
+    if(game.check_user(current_user) and game.turn == user_turn and user_type == UserType.PLAYER and int(pos) in game.allowed and game.filled[int(pos)] == -1):
+        game.move(current_user, pos)
         if game.is_game_over():
             emit('connect4gameover', 
                 {'winningCircles': game.winningCircles,

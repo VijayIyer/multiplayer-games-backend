@@ -7,12 +7,6 @@ class Turn(Enum):
     X=0
     O=1
 
-# class User():
-#     def __init__(self, user_id, user_name, user_type = UserType.PLAYER):
-#         self.user_type = user_type
-#         self.id = user_id
-#         self.name = user_name
-
 class TicTacToeGame(Game):
     _games  = []
     def __init__(self, game_type = GameType.MULTIPLAYER):
@@ -23,11 +17,14 @@ class TicTacToeGame(Game):
         self.squares = [-1 for _ in range(9)]
         self.state = GameState.NOT_STARTED
         self.game_type = game_type
+        self.num_allowed_users = 2
         self.turn = Turn.X
         self.winner = None
     
-    def move(self, pos):
-        if self.squares[pos] == -1:
+    def move(self, user, pos):
+        user_type = [x.user_type for x in self.users if x.id == user.id][0]
+        user_turn = [x.turn for x in self.users if x.id == user.id][0]
+        if self.check_user(user) and user_type == UserType.PLAYER and user_turn == self.turn and self.squares[pos] == -1:
             if self.state == GameState.NOT_STARTED:
                 self.state = GameState.STARTED
             self.squares[pos] = 'X' if self.turn == Turn.X else 'O'
@@ -39,6 +36,12 @@ class TicTacToeGame(Game):
                 # update turn only if game is not over to give the other player permission to make move
                 self.update_turn()
     
+    def assign_user_turn(self, user):
+        for i in range(len(self.users)):
+            if user.id == self.users[i].id:
+                self.users[i].turn = self.turn
+        print(self.users)
+
     # needs to be in the game interface
     def update_turn(self):
         if self.turn == Turn.X:

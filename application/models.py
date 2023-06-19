@@ -1,8 +1,8 @@
-from flask_login import UserMixin
+# from flask_login import UserMixin
 from . import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
-class User(UserMixin, db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True) # primary keys are required by SQLAlchemy
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
@@ -17,3 +17,6 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         """Check hashed password."""
         return check_password_hash(self.password, password)
+    
+    def __str__(self):
+        return f'{self.id} {self.email} {self.name}'
