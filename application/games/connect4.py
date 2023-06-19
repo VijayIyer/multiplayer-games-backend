@@ -140,6 +140,6 @@ class Connect4(Game):
         'id':self.id, 
         'allowed':self.allowed, 
         'filled':self.filled, 
-        'winningCircles':self.winningCircles if self.winningCircles is not None else None
+        'winningCircles':self.winningCircles if self.winningCircles is not None else None,
         'turn':self.turn.value
         }

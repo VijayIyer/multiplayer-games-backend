@@ -43,7 +43,7 @@ def get_ongoing_connect4_game(current_user, game_info):
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
     emit('ongoingGameDetails', existing_game.get_game_data(), to=request.sid)
 
-@socket.on('join_game')
+@socket.on('joinGame')
 @socket_token_required
 def join_game(current_user, game_info):
     game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
