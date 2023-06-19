@@ -138,6 +138,7 @@ class Connect4(Game):
     def get_game_data(self):
         return { 
         'id':self.id, 
+        'type':self.type,
         'allowed':self.allowed, 
         'filled':self.filled, 
         'winningCircles':self.winningCircles if self.winningCircles is not None else None,

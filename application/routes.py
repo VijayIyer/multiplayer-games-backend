@@ -46,11 +46,15 @@ def get_ongoing_connect4_game(current_user, game_info):
 @socket.on('joinGame')
 @socket_token_required
 def join_game(current_user, game_info):
+    print(f'request coming from id - {request.sid}')
     game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
+    print(game.get_details())
     if not game.check_user(current_user):
         game.add_user(current_user)
         game.assign_user_turn(current_user)
-    emit('joinedGame', existing_game.get_details(), to=request.sid)
+    print(f'joined game - {[user.id for user in game.users]}')
+    print(f'sending request to id - {request.sid}')
+    return game.get_details()
 
 @socket.on('chat')
 def chat(data):
