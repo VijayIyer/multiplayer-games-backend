@@ -69,4 +69,10 @@ class TicTacToeGame(Game):
                 return (a,b,c)
         return None
     
-    
+    def get_game_data(self):
+        return { 'id':self.id,
+                'type':self.type,
+                'turn':self.turn.value, 
+                'squares':self.squares, 
+                'winner':self.winner 
+                }

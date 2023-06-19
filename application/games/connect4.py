@@ -7,12 +7,6 @@ class Turn(Enum):
     RED=0
     BLUE=1
 
-# class User():
-#     def __init__(self, user_id, user_name, user_type = UserType.PLAYER):
-#         self.user_type = user_type
-#         self.id = user_id
-#         self.name = user_name
-
 class Connect4(Game):
     def __init__(self, game_type = GameType.MULTIPLAYER, num_rows = 8, num_cols = 6):
         super().__init__()
@@ -141,4 +135,12 @@ class Connect4(Game):
         if self.rightLeftCellsInARow is not None:
             return self.rightLeftCellsInARow
     
-    
+    def get_game_data(self):
+        return { 
+        'id':self.id, 
+        'type':self.type,
+        'allowed':self.allowed, 
+        'filled':self.filled, 
+        'winningCircles':self.winningCircles if self.winningCircles is not None else None,
+        'turn':self.turn.value
+        }

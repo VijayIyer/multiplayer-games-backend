@@ -24,3 +24,12 @@ class Game:
     
     def __repr__(self):
         return f'game id : {self.id}, game state:{self.state}'
+
+    def get_details(self):
+        return {'gameId': self.id, 
+        'type':self.type, 
+        'users':[user.name for user in self.users]
+        }
+
+    def get_game_data(self):
+        return {'gameId':self.id}
