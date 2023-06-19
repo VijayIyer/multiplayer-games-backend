@@ -25,9 +25,6 @@ def create_new_tictactoe_game(current_user, user_info):
 @socket_token_required
 def get_ongoing_game(current_user, game_info):
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
-    if not existing_game.check_user(current_user):
-        existing_game.add_user(current_user)
-        existing_game.assign_user_turn(current_user)
     emit('ongoingGameDetails', existing_game.get_game_data() , to=request.sid)
 
 @socket.on('createConnect4Game')
@@ -38,27 +35,33 @@ def create_new_connect4_game(current_user, user_info):
     new_game.add_user(current_user)
     new_game.assign_user_turn(current_user)
     emit('newGameCreated', new_game.get_details(), broadcast=True)
-    emit('newConnect4GameDetails', new_game.get_game_data(), to=request.sid)
+    emit('newGameDetails', new_game.get_game_data(), to=request.sid)
 
 @socket.on('getExistingConnect4Game')
 @socket_token_required
 def get_ongoing_connect4_game(current_user, game_info):
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
-    if not existing_game.check_user(current_user):
-        existing_game.add_user(current_user)
-        existing_game.assign_user_turn(current_user)
-    emit('ongoingConnect4GameDetails', existing_game.get_game_data(), to=request.sid)
+    emit('ongoingGameDetails', existing_game.get_game_data(), to=request.sid)
+
+@socket.on('join_game')
+@socket_token_required
+def join_game(current_user, game_info):
+    game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
+    if not game.check_user(current_user):
+        game.add_user(current_user)
+        game.assign_user_turn(current_user)
+    emit('joinedGame', existing_game.get_details(), to=request.sid)
 
 @socket.on('chat')
 def chat(data):
     # print(f'recieved chat message:{data["msg"]}')
     socket.emit('chat', {'msg':data['msg']}, broadcast=True)
 
-@socket.on('join')
-def join_game():
-    user_id = request.sid
-    # print(user_id)
-    emit('joined',{'user_id':user_id})
+# @socket.on('join')
+# def join_game():
+#     user_id = request.sid
+#     # print(user_id)
+#     emit('joined',{'user_id':user_id})
 
 @socket.on('connect')
 def test_connect():
