@@ -21,7 +21,7 @@ def create_new_tictactoe_game(current_user, user_info):
     emit('newGameCreated', new_game.get_details(), broadcast=True)
     emit('newGameDetails', new_game.get_game_data(), to=request.sid)
 
-@socket.on('getExistingTicTacToeGame')
+@socket.on('getExistingGameDetails')
 @socket_token_required
 def get_ongoing_game(current_user, game_info):
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
@@ -30,30 +30,19 @@ def get_ongoing_game(current_user, game_info):
 @socket.on('createConnect4Game')
 @socket_token_required
 def create_new_connect4_game(current_user, user_info):
-    print('creating new game')
     new_game = Connect4()
     new_game.add_user(current_user)
     new_game.assign_user_turn(current_user)
     emit('newGameCreated', new_game.get_details(), broadcast=True)
     emit('newGameDetails', new_game.get_game_data(), to=request.sid)
 
-@socket.on('getExistingConnect4Game')
-@socket_token_required
-def get_ongoing_connect4_game(current_user, game_info):
-    existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
-    emit('ongoingGameDetails', existing_game.get_game_data(), to=request.sid)
-
 @socket.on('joinGame')
 @socket_token_required
 def join_game(current_user, game_info):
-    print(f'request coming from id - {request.sid}')
     game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
-    print(game.get_details())
     if not game.check_user(current_user):
         game.add_user(current_user)
         game.assign_user_turn(current_user)
-    print(f'joined game - {[user.id for user in game.users]}')
-    print(f'sending request to id - {request.sid}')
     return game.get_details()
 
 @socket.on('chat')
