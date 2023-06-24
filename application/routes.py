@@ -11,13 +11,12 @@ from application.games.enums import GameState, GameType, UserType
 from application.games.tic_tac_toe import TicTacToeGame
 from application.games.connect4 import Connect4
 
-@socket.on('createTicTacToeGame')
+@socket.on('createNewGame')
 @socket_token_required
-def create_new_tictactoe_game(current_user, user_info):
+def create_new_game(current_user, game_info):
     print('creating new game....')
     new_game = TicTacToeGame()
     new_game.add_user(current_user)
-    new_game.assign_user_turn(current_user)
     emit('newGameCreated', new_game.get_details(), broadcast=True)
     emit('newGameDetails', new_game.get_game_data(), to=request.sid)
 
@@ -27,22 +26,12 @@ def get_ongoing_game(current_user, game_info):
     existing_game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
     emit('ongoingGameDetails', existing_game.get_game_data() , to=request.sid)
 
-@socket.on('createConnect4Game')
-@socket_token_required
-def create_new_connect4_game(current_user, user_info):
-    new_game = Connect4()
-    new_game.add_user(current_user)
-    new_game.assign_user_turn(current_user)
-    emit('newGameCreated', new_game.get_details(), broadcast=True)
-    emit('newGameDetails', new_game.get_game_data(), to=request.sid)
-
 @socket.on('joinGame')
 @socket_token_required
 def join_game(current_user, game_info):
     game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
     if not game.check_user(current_user):
         game.add_user(current_user)
-        game.assign_user_turn(current_user)
     return game.get_details()
 
 @socket.on('chat')
