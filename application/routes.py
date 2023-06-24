@@ -17,7 +17,7 @@ def create_new_game_with_type(game_type):
     elif game_type == 'Connect4':
         return Connect4()
     else:
-        return None
+        throw new Exception
 
 def get_game_from_id(id):
     return list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
@@ -26,13 +26,13 @@ def get_game_from_id(id):
 @socket_token_required
 def create_new_game(current_user, game_info):
     print('creating new game....')
-    new_game = create_new_game_with_type()
-    if new_game:
+    try:
+        new_game = create_new_game_with_type()
         new_game.add_user(current_user)
         emit('newGameCreated', new_game.get_details(), broadcast=True)
         emit('newGameDetails', new_game.get_game_data(), to=request.sid)
-    else:
-        emit('errorCreatingNewGame')
+    except Exception as e:
+        emit('errorCreatingNewGame', to=request.sid)
 
 @socket.on('getExistingGameDetails')
 @socket_token_required
