@@ -37,6 +37,15 @@ def create_new_game(current_user, game_info):
         print(e)
         emit('errorCreatingNewGame', to=request.sid)
 
+@socket.on('checkIfInGame')
+@socket_token_required
+def check_if_in_game(current_user, game_info):
+    game = get_game_by_id(game_info['id'])
+    return { 
+    'alreadyInGame': game.check_user(current_user), 
+    'gameData':game.get_game_data() 
+    }
+
 @socket.on('getExistingGameDetails')
 @socket_token_required
 def get_ongoing_game(current_user, game_info):
@@ -49,6 +58,7 @@ def join_game(current_user, game_info):
     game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
     if not game.check_user(current_user):
         game.add_user(current_user)
+        game.assign_user_turn(current_user, game_info['turn']);
     return game.get_details()
 
 @socket.on('assignTurnToUser')
@@ -88,7 +98,7 @@ def get_all_ongoing_games():
 @socket.on('move')
 @socket_token_required
 def move(current_user, move):
-    game = Game._games[move['gameId']]
+    game = get_game_from_id([move['gameId']])
     if game.is_game_over():
         # print('game over!')
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner}, to=request.sid)
