@@ -30,7 +30,7 @@ def create_new_game(current_user, game_info):
         print(game_info['type'])
         new_game = create_new_game_with_type(game_info['type'])
         new_game.add_user(current_user)
-        new_game.assign_user_turn(game_info['turn'])
+        new_game.assign_user_turn(current_user, game_info['turn'])
         emit('newGameCreated', new_game.get_details(), broadcast=True)
         emit('newGameDetails', new_game.get_game_data(), to=request.sid)
     except Exception as e:
