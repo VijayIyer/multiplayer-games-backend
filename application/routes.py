@@ -20,7 +20,7 @@ def create_new_game_with_type(game_type):
         raise Exception
 
 def get_game_from_id(id):
-    return list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
+    return list(filter(lambda game: game.id == int(id), Game._games))[0]
 
 @socket.on('createNewGame')
 @socket_token_required
@@ -40,7 +40,8 @@ def create_new_game(current_user, game_info):
 @socket.on('checkIfInGame')
 @socket_token_required
 def check_if_in_game(current_user, game_info):
-    game = get_game_by_id(game_info['id'])
+    print(game_info)
+    game = get_game_from_id(game_info['id'])
     return { 
     'alreadyInGame': game.check_user(current_user), 
     'gameData':game.get_game_data() 
