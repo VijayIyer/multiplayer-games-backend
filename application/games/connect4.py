@@ -42,12 +42,6 @@ class Connect4(Game):
             else:
                 self.update_turn()
 
-    def assign_user_turn(self, user):
-        for i in range(len(self.users)):
-            if user.id == self.users[i].id:
-                self.users[i].turn = self.turn
-        # print(self.users)
-
     # needs to be in game interface?
     def update_turn(self):
         if self.turn == Turn.BLUE:

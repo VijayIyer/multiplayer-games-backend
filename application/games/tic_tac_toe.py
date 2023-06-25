@@ -36,12 +36,6 @@ class TicTacToeGame(Game):
                 # update turn only if game is not over to give the other player permission to make move
                 self.update_turn()
     
-    def assign_user_turn(self, user):
-        for i in range(len(self.users)):
-            if user.id == self.users[i].id:
-                self.users[i].turn = self.turn
-        print(self.users)
-
     # needs to be in the game interface
     def update_turn(self):
         if self.turn == Turn.X:

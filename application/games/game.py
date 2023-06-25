@@ -22,6 +22,11 @@ class Game:
             new_user.user_type = UserType.PLAYER
         self.users.append(new_user)
     
+    def assign_user_turn(self, user, turn):
+        for i in range(len(self.users)):
+            if user.id == self.users[i].id:
+                self.users[i].turn = turn
+
     def __repr__(self):
         return f'game id : {self.id}, game state:{self.state}'
 
