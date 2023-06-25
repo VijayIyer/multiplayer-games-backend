@@ -13,7 +13,7 @@ class TicTacToeGame(Game):
         super().__init__()
         self.id = len(Game._games)
         Game._games.append(self)
-        self.type = 'Tic Tac Toe'
+        self.type = 'TicTacToe'
         self.squares = [-1 for _ in range(9)]
         self.state = GameState.NOT_STARTED
         self.game_type = game_type
