@@ -61,7 +61,7 @@ def join_game(current_user, game_info):
     if not game.check_user(current_user):
         game.add_user(current_user)
         game.assign_user_turn(current_user, game_info['turn']);
-    return game.get_details()
+    return game.get_game_data()
 
 @socket.on('assignTurnToUser')
 @socket_token_required
@@ -100,7 +100,7 @@ def get_all_ongoing_games():
 @socket.on('move')
 @socket_token_required
 def move(current_user, move):
-    game = get_game_from_id([move['gameId']])
+    game = get_game_from_id(move['gameId'])
     if game.is_game_over():
         # print('game over!')
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner}, to=request.sid)
@@ -116,13 +116,14 @@ def move(current_user, move):
 @socket.on('connect4Move')
 @socket_token_required
 def make_connect4_move(current_user, move):
-    
-    game = Game._games[move['gameId']]
+    print(move)
+    game = get_game_from_id(move['gameId'])
     # print(f'turn is {game.turn}')
     # game changes based on move
     pos = move['cellNumber']
     user_type = [x.user_type for x in game.users if x.id == current_user.id][0]
     user_turn = [x.turn for x in game.users if x.id == current_user.id][0]
+    print(f'user_turn: {user_turn}, user_type: {user_type}, pos:{pos}')
     if(game.check_user(current_user) and game.turn == user_turn and user_type == UserType.PLAYER and int(pos) in game.allowed and game.filled[int(pos)] == -1):
         game.move(current_user, pos)
         if game.is_game_over():
