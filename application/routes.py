@@ -56,7 +56,8 @@ def get_ongoing_game(current_user, game_info):
 @socket.on('joinGame')
 @socket_token_required
 def join_game(current_user, game_info):
-    game = list(filter(lambda game: game.id == int(game_info['id']), Game._games))[0]
+    print(game_info)
+    game = get_game_from_id(game_info['id'])
     if not game.check_user(current_user):
         game.add_user(current_user)
         game.assign_user_turn(current_user, game_info['turn']);

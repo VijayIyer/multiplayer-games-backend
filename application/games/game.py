@@ -11,7 +11,6 @@ class Game:
         print([user.id for user in self.users], user.id)
         if user.id in [user.id for user in self.users]:
             return True
-        print(f'user does not exist')
         return False
 
     def add_user(self, user):
@@ -31,10 +30,11 @@ class Game:
         return f'game id : {self.id}, game state:{self.state}'
 
     def get_details(self):
-        return {'gameId': self.id, 
+        return {
+        'id': self.id, 
         'type':self.type, 
         'users':[user.name for user in self.users]
         }
 
     def get_game_data(self):
-        return {'gameId':self.id}
+        return {'id':self.id}
