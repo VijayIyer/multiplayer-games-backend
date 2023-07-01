@@ -30,6 +30,7 @@ def socket_token_required(f):
     def decorated(*args, **kwargs):
         
         if not 'token' in args[0].keys():
+            print('emitting unAuthorized event')
             socket.emit('userUnauthorized')
             return
         try:
@@ -40,6 +41,7 @@ def socket_token_required(f):
             return f(current_user, *args, **kwargs)
         except Exception as e:
             print(f'socket token required failing with this - {e}') 
+            socket.emit('userUnauthorized')
             return None
     return decorated
 
@@ -54,7 +56,6 @@ def token_required(f):
             return jsonify({'message':'Token is missing'}), 401
         try:
             data = jwt.decode(token, app.config['SECRET_KEY'],algorithms='HS256')
-            print(f'data in token is {data}')
             currentUser = User.query.get(data['user_id'])
         except Exception as e:
             print(f'socket token required failing with this - {e}')            
