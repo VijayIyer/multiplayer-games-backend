@@ -111,8 +111,10 @@ def move(current_user, move):
     game.move(current_user, pos)
     if game.winner is not None:
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner, 'turn': game.turn.value}, broadcast=True)
-
-    emit('opponentMadeMove', {'id':game.id, 'squares':game.squares, 'turn':game.turn.value}, skip_sid=request.sid, broadcast=True)
+    elif game.winner is None and game.state == GameState.OVER:
+        emit('gameOver', {'id':game.id, 'winningSquares':None, 'turn': game.turn.value}, broadcast=True)
+    else:
+        emit('opponentMadeMove', {'id':game.id, 'squares':game.squares, 'turn':game.turn.value}, skip_sid=request.sid, broadcast=True)
     return {'squares':game.squares, 'turn':game.turn.value}
 
 @socket.on('connect4Move')
