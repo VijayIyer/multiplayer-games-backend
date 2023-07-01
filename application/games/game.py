@@ -8,7 +8,6 @@ class Game:
         self.num_allowed_users = 2 # can be overwritten
 
     def check_user(self, user):
-        print([user.id for user in self.users], user.id)
         if user.id in [user.id for user in self.users]:
             return True
         return False

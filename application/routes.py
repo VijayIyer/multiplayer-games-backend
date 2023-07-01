@@ -101,6 +101,8 @@ def get_all_ongoing_games():
 @socket_token_required
 def move(current_user, move):
     game = get_game_from_id(move['gameId'])
+    print(game)
+    print(move)
     if game.is_game_over():
         # print('game over!')
         emit('gameOver', {'id':game.id, 'winningSquares':game.winner}, to=request.sid)

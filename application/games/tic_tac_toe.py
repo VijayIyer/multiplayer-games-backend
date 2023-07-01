@@ -21,9 +21,16 @@ class TicTacToeGame(Game):
         self.turn = Turn.X
         self.winner = None
     
+    def assign_user_turn(self, user, turn):
+        for i in range(len(self.users)):
+            if user.id == self.users[i].id:
+                self.users[i].turn = Turn.X if turn == 'X' else Turn.O
+
     def move(self, user, pos):
         user_type = [x.user_type for x in self.users if x.id == user.id][0]
         user_turn = [x.turn for x in self.users if x.id == user.id][0]
+        print(f'user type - {user_type}')
+        print(f'user turn - {user_turn}, game turn  - {self.turn}')
         if self.check_user(user) and user_type == UserType.PLAYER and user_turn == self.turn and self.squares[pos] == -1:
             if self.state == GameState.NOT_STARTED:
                 self.state = GameState.STARTED
@@ -31,6 +38,8 @@ class TicTacToeGame(Game):
             
             self.winner = self.calculate_winner(self.squares)
             if self.winner is not None:
+                self.state = GameState.OVER
+            elif len([x for x in self.squares if x == -1]) == 0:
                 self.state = GameState.OVER
             else:
                 # update turn only if game is not over to give the other player permission to make move
