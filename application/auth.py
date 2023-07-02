@@ -31,7 +31,7 @@ def socket_token_required(f):
         
         if not 'token' in args[0].keys():
             print('emitting unAuthorized event')
-            socket.emit('userUnauthorized')
+            socket.emit('userUnauthorized', to=request.sid)
             return
         try:
             token = args[0]['token']
@@ -41,7 +41,7 @@ def socket_token_required(f):
             return f(current_user, *args, **kwargs)
         except Exception as e:
             print(f'socket token required failing with this - {e}') 
-            socket.emit('userUnauthorized')
+            socket.emit('userUnauthorized', to=request.sid)
             return None
     return decorated
 
