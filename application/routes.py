@@ -1,4 +1,4 @@
-from flask import Flask, json, request, current_app as app, session
+from flask import Flask, json, request, current_app as app, session, make_response
 # from flask_login import current_user, login_required
 from flask_cors import CORS
 from flask_socketio import SocketIO, send, emit
@@ -149,6 +149,19 @@ def make_connect4_move(current_user, move):
     else:
         # print('emitting move not allowed message')
         emit('moveNotAllowed', to=request.sid)
+
+@app.route('/game/<game_type>/<int:id>')
+@token_required
+def get_game_data(current_user, game_type, id):
+    print(f'in get_game_data api request')
+    try:
+        game = get_game_from_id(int(id))
+        if not game.check_user(current_user):
+            raise Exception('user not present in game')
+        return make_response(game.get_game_data(), 200)
+    except Exception as e:
+        print(e)
+        return make_response({'message': 'error getting game data'}, 500)
 
 
 if __name__ == "__main__":
